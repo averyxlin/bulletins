@@ -37,7 +37,7 @@ export default function Landscape({ className = '' }: LandscapeProps) {
       layer4: (prev.layer4 + speeds.layer4) % imageWidth,
     }));
     setIsMoving(true);
-  }, []);
+  }, [speeds.layer1, speeds.layer2, speeds.layer3, speeds.layer4]);
 
   const moveRight = useCallback(() => {
     // Train moving right = landscape moves left
@@ -48,7 +48,7 @@ export default function Landscape({ className = '' }: LandscapeProps) {
       layer4: (prev.layer4 - speeds.layer4) % imageWidth,
     }));
     setIsMoving(true);
-  }, []);
+  }, [speeds.layer1, speeds.layer2, speeds.layer3, speeds.layer4]);
 
   // Reset moving state after a short delay
   useEffect(() => {

@@ -21,7 +21,6 @@ export default function Scene({ className = '' }: SceneProps) {
   });
 
   const [isMoving, setIsMoving] = useState(false);
-  const [direction, setDirection] = useState<'left' | 'right'>('right'); // Default facing right
   const [speedMultiplier, setSpeedMultiplier] = useState(1); // Speed control
   
   // Slideshow state
@@ -62,9 +61,8 @@ export default function Scene({ className = '' }: SceneProps) {
       layer3: (prev.layer3 - speeds.layer3 * speedMultiplier) % imageWidth,
       layer4: prev.layer4 - speeds.layer4 * speedMultiplier, // Remove modulo for continuous signpost progression
     }));
-    setDirection('left');
     setIsMoving(true);
-  }, [speedMultiplier]);
+  }, [speedMultiplier, speeds.layer1, speeds.layer2, speeds.layer3, speeds.layer4]);
 
   const moveRight = useCallback(() => {
     // Train moving right = landscape moves left
@@ -74,9 +72,8 @@ export default function Scene({ className = '' }: SceneProps) {
       layer3: (prev.layer3 + speeds.layer3 * speedMultiplier) % imageWidth,
       layer4: prev.layer4 + speeds.layer4 * speedMultiplier, // Remove modulo for continuous signpost progression
     }));
-    setDirection('right');
     setIsMoving(true);
-  }, [speedMultiplier]);
+  }, [speedMultiplier, speeds.layer1, speeds.layer2, speeds.layer3, speeds.layer4]);
 
   // Reset moving state after a short delay
   useEffect(() => {
