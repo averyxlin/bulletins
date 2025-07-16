@@ -15,34 +15,50 @@ export default function Landscape({ className = '' }: LandscapeProps) {
     layer4: 0,
   });
 
-  // Movement speeds for each layer (pixels per keypress)
+  const [isMoving, setIsMoving] = useState(false);
+
   const speeds = {
-    layer1: 0.5,  // Slowest (background)
-    layer2: 1,    // Slow
-    layer3: 4,    // Fast
-    layer4: 2,    // Medium
+    layer1: 2,    // Slowest (background) - increased from 0.5
+    layer2: 4,    // Slow - increased from 1
+    layer3: 12,   // Fast - increased from 4
+    layer4: 6,    // Medium - increased from 2
   };
 
   // Image widths for looping calculation
-  const imageWidth = 1920; // Assuming standard width, adjust if needed
+  const imageWidth = 1920; 
 
   const moveLeft = useCallback(() => {
-    setPositions(prev => ({
-      layer1: (prev.layer1 - speeds.layer1) % imageWidth,
-      layer2: (prev.layer2 - speeds.layer2) % imageWidth,
-      layer3: (prev.layer3 - speeds.layer3) % imageWidth,
-      layer4: (prev.layer4 - speeds.layer4) % imageWidth,
-    }));
-  }, []);
-
-  const moveRight = useCallback(() => {
+    // Train moving left = landscape moves right
     setPositions(prev => ({
       layer1: (prev.layer1 + speeds.layer1) % imageWidth,
       layer2: (prev.layer2 + speeds.layer2) % imageWidth,
       layer3: (prev.layer3 + speeds.layer3) % imageWidth,
       layer4: (prev.layer4 + speeds.layer4) % imageWidth,
     }));
+    setIsMoving(true);
   }, []);
+
+  const moveRight = useCallback(() => {
+    // Train moving right = landscape moves left
+    setPositions(prev => ({
+      layer1: (prev.layer1 - speeds.layer1) % imageWidth,
+      layer2: (prev.layer2 - speeds.layer2) % imageWidth,
+      layer3: (prev.layer3 - speeds.layer3) % imageWidth,
+      layer4: (prev.layer4 - speeds.layer4) % imageWidth,
+    }));
+    setIsMoving(true);
+  }, []);
+
+  // Reset moving state after a short delay
+  useEffect(() => {
+    if (isMoving) {
+      const timeout = setTimeout(() => {
+        setIsMoving(false);
+      }, 300); // Reset after 300ms of no movement
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isMoving]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -98,6 +114,96 @@ export default function Landscape({ className = '' }: LandscapeProps) {
     );
   };
 
+  const renderRailsLayer = (position: number, zIndex: number) => {
+    const railWidth = 80; 
+    const railHeight = 40; 
+    const railsPerScreen = 20; 
+    return (
+      <div
+        key="rails"
+        className="absolute inset-0 overflow-hidden"
+        style={{ zIndex }}
+      >
+        {[-1, 0, 1].map((offset) => (
+          <div
+            key={offset}
+            className="absolute"
+            style={{
+              left: `${position + offset * (railWidth * railsPerScreen)}px`,
+              bottom: '32%', 
+              height: `${railHeight}px`,
+              width: `${railWidth * railsPerScreen}px`,
+              display: 'flex',
+            }}
+          >
+            {Array.from({ length: railsPerScreen }, (_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: `${railWidth}px`,
+                  height: `${railHeight}px`,
+                  position: 'relative',
+                  flexShrink: 0,
+                }}
+              >
+                <Image
+                  src="/assets/rails.png"
+                  alt="Railway tracks"
+                  fill
+                  className="object-cover"
+                  style={{ 
+                    imageRendering: 'pixelated',
+                    transform: 'rotate(0deg)', 
+                  }}
+                  quality={100}
+                  unoptimized
+                  sizes={`${railWidth}px`}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderTrainLayer = (zIndex: number) => {
+    const trainWidth = 480;
+    const trainHeight = 240; 
+    
+    return (
+      <div
+        key="train"
+        className="absolute inset-0 overflow-hidden"
+        style={{ zIndex }}
+      >
+        <div
+          className="absolute"
+          style={{
+            left: '50%',
+            bottom: '26.7%',
+            width: `${trainWidth}px`,
+            height: `${trainHeight}px`,
+            transform: 'translateX(-50%)', 
+          }}
+        >
+          <Image
+            src={isMoving ? "/assets/trains/train_v18.gif" : "/assets/trains/train_v18.png"}
+            alt="Train"
+            fill
+            className="object-contain"
+            style={{ 
+              imageRendering: 'pixelated',
+            }}
+            quality={100}
+            unoptimized
+            sizes={`${trainWidth}px`}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={`relative w-full h-screen overflow-hidden ${className}`}>
       {/* Layer 1 - Background (slowest) */}
@@ -109,13 +215,14 @@ export default function Landscape({ className = '' }: LandscapeProps) {
       {/* Layer 4 - Mid-ground */}
       {renderLayer(4, positions.layer4, 30)}
       
+      {/* Rails layer - moves with layer 4 */}
+      {renderRailsLayer(positions.layer4, 35)}
+      
+      {/* Train layer - centered, shows GIF when moving */}
+      {renderTrainLayer(37)}
+      
       {/* Layer 3 - Foreground (fastest) */}
       {renderLayer(3, positions.layer3, 40)}
-
-      {/* Controls hint */}
-      <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-2 rounded text-sm z-50">
-        Use A/D or ←/→ to move
-      </div>
     </div>
   );
 }
