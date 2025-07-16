@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import LandscapeLayer from './LandscapeLayer';
 import Rails from './Rails';
 import Train from './Train';
+import Signpost from './Signpost';
 
 interface SceneProps {
   className?: string;
@@ -82,6 +83,10 @@ export default function Scene({ className = '' }: SceneProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [moveLeft, moveRight]);
 
+  const handleSignpostClick = () => {
+    console.log('Signpost clicked! Welcome to the bulletin board!');
+  };
+
   return (
     <div className={`relative w-full h-screen overflow-hidden ${className}`}>
       {/* Layer 1 - Background (slowest) */}
@@ -134,6 +139,15 @@ export default function Scene({ className = '' }: SceneProps) {
         <LandscapeLayer 
           layerNum={3} 
           position={positions.layer3} 
+          className=""
+        />
+      </div>
+      
+      {/* Signpost - Interactive element */}
+      <div style={{ zIndex: 45 }}>
+        <Signpost 
+          onClick={handleSignpostClick}
+          position={{ x: '20%', y: '24%' }}
           className=""
         />
       </div>
