@@ -1,9 +1,9 @@
-import Landscape from "@/components/Landscape";
+import Scene from "@/components/Scene";
 
 export default function Home() {
   return (
     <div className="w-full h-screen">
-      <Landscape />
+      <Scene />
     </div>
   );
 }

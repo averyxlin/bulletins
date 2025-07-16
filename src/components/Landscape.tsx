@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
+import SmokeAnimation from './SmokeAnimation';
 
 interface LandscapeProps {
   className?: string;
@@ -204,6 +205,11 @@ export default function Landscape({ className = '' }: LandscapeProps) {
             quality={100}
             unoptimized
             sizes={`${trainWidth}px`}
+          />
+          {/* Smoke animation positioned at the train's chimney */}
+          <SmokeAnimation
+            isActive={isMoving}
+            className="-top-7 left-91 z-10"
           />
         </div>
       </div>
