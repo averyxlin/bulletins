@@ -81,22 +81,23 @@ export default function SmokeAnimation({ isActive, className = '' }: SmokeAnimat
 
     intervalRef.current = setInterval(() => {
       setCurrentFrame(prevFrame => {
-        const nextFrame = prevFrame + 1;
+        let nextFrame = prevFrame + 1;
         
-        // Handle phase transitions
-        if (prevFrame === phases.fadeIn.end && animationPhase === 'fadeIn') {
+        // Handle phase transitions based on current frame
+        if (prevFrame === phases.fadeIn.end) {
           setAnimationPhase('idle');
-          return phases.idle.start;
-        } else if (prevFrame === phases.idle.end && animationPhase === 'idle') {
+          nextFrame = phases.idle.start;
+        } else if (prevFrame === phases.idle.end) {
           // Loop back to start of idle phase
-          return phases.idle.start;
-        } else if (prevFrame === phases.fadeOut.end && animationPhase === 'fadeOut') {
+          nextFrame = phases.idle.start;
+        } else if (prevFrame === phases.fadeOut.end) {
           setAnimationPhase('stopped');
           clearAnimations();
-          return 0;
+          nextFrame = 0;
         }
         
-        return nextFrame;
+        // Ensure frame is within bounds
+        return Math.max(0, Math.min(nextFrame, frames.length - 1));
       });
     }, 100); // 100ms per frame as specified in the JSON
   };
@@ -111,15 +112,16 @@ export default function SmokeAnimation({ isActive, className = '' }: SmokeAnimat
 
     intervalRef.current = setInterval(() => {
       setCurrentFrame(prevFrame => {
-        const nextFrame = prevFrame + 1;
+        let nextFrame = prevFrame + 1;
         
         if (prevFrame === phases.fadeOut.end) {
           setAnimationPhase('stopped');
           clearAnimations();
-          return 0;
+          nextFrame = 0;
         }
         
-        return nextFrame;
+        // Ensure frame is within bounds
+        return Math.max(0, Math.min(nextFrame, frames.length - 1));
       });
     }, 100);
   };
@@ -146,6 +148,11 @@ export default function SmokeAnimation({ isActive, className = '' }: SmokeAnimat
   }
 
   const currentFrameData = frames[currentFrame];
+
+  // Safety check to prevent undefined access
+  if (!currentFrameData) {
+    return null;
+  }
 
   return (
     <div className={`absolute ${className}`}>

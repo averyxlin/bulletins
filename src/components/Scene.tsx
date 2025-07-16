@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import LandscapeLayer from './LandscapeLayer';
 import Rails from './Rails';
 import Train from './Train';
-import Signpost from './Signpost';
+import SignpostLayer from './SignpostLayer';
 
 interface SceneProps {
   className?: string;
@@ -83,8 +83,8 @@ export default function Scene({ className = '' }: SceneProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [moveLeft, moveRight]);
 
-  const handleSignpostClick = () => {
-    console.log('Signpost clicked! Welcome to the bulletin board!');
+  const handleSignpostClick = (id: number) => {
+    console.log(`Signpost ${id} clicked! Welcome to bulletin board ${id}!`);
   };
 
   return (
@@ -117,6 +117,14 @@ export default function Scene({ className = '' }: SceneProps) {
           className=""
         />
       </div>
+
+      {/* Signpost Layer - Interactive elements that move with layer 4 */}
+      <div style={{ zIndex: 32 }}>
+        <SignpostLayer 
+          position={positions.layer4}
+          onSignpostClick={handleSignpostClick}
+          className=""
+        />
       
       {/* Rails layer - moves with layer 4 */}
       <div style={{ zIndex: 35 }}>
@@ -143,13 +151,7 @@ export default function Scene({ className = '' }: SceneProps) {
         />
       </div>
       
-      {/* Signpost - Interactive element */}
-      <div style={{ zIndex: 45 }}>
-        <Signpost 
-          onClick={handleSignpostClick}
-          position={{ x: '20%', y: '24%' }}
-          className=""
-        />
+      
       </div>
     </div>
   );
