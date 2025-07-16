@@ -117,26 +117,32 @@ export default function Landscape({ className = '' }: LandscapeProps) {
   const renderRailsLayer = (position: number, zIndex: number) => {
     const railWidth = 80; 
     const railHeight = 40; 
-    const railsPerScreen = 20; 
+
+    const screenWidth = 1920; // Fixed width to ensure consistent SSR/client rendering
+    const railsNeeded = Math.ceil(screenWidth / railWidth) + 10; // Extra rails for buffer
+    const sectionWidth = railWidth * railsNeeded;
+    const normalizedPosition = ((position % sectionWidth) + sectionWidth) % sectionWidth;
+    
     return (
       <div
         key="rails"
         className="absolute inset-0 overflow-hidden"
         style={{ zIndex }}
       >
-        {[-1, 0, 1].map((offset) => (
+        {/* Render enough sections to ensure continuous coverage */}
+        {[-2, -1, 0, 1, 2].map((offset) => (
           <div
             key={offset}
             className="absolute"
             style={{
-              left: `${position + offset * (railWidth * railsPerScreen)}px`,
+              left: `${-normalizedPosition + offset * sectionWidth}px`,
               bottom: '32%', 
               height: `${railHeight}px`,
-              width: `${railWidth * railsPerScreen}px`,
+              width: `${sectionWidth}px`,
               display: 'flex',
             }}
           >
-            {Array.from({ length: railsPerScreen }, (_, i) => (
+            {Array.from({ length: railsNeeded }, (_, i) => (
               <div
                 key={i}
                 style={{
