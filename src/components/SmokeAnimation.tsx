@@ -132,7 +132,7 @@ export default function SmokeAnimation({ isActive, className = '' }: SmokeAnimat
     } else if (!isActive && (animationPhase === 'fadeIn' || animationPhase === 'idle')) {
       startFadeOut();
     }
-  }, [isActive, animationPhase]);
+  }, [isActive, animationPhase, startAnimation, startFadeOut]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -164,7 +164,7 @@ export default function SmokeAnimation({ isActive, className = '' }: SmokeAnimat
           backgroundPosition: `-${currentFrameData.x * 1.25}px -${currentFrameData.y * 1.25}px`,
           backgroundSize: '400px 400px', 
           backgroundRepeat: 'no-repeat',
-          imageRendering: 'pixelated' as any,
+          imageRendering: 'pixelated' as React.CSSProperties['imageRendering'],
         }}
       />
     </div>
