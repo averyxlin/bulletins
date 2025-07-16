@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import LandscapeLayer from './LandscapeLayer';
 import Rails from './Rails';
 import Train from './Train';
 import SignpostLayer from './SignpostLayer';
+import Slideshow from './Slideshow';
+import { getSlideConfigForSignpost } from '../config/signpostSlides';
 
 interface SceneProps {
   className?: string;
@@ -12,13 +14,35 @@ interface SceneProps {
 
 export default function Scene({ className = '' }: SceneProps) {
   const [positions, setPositions] = useState({
-    layer1: 0,
-    layer2: 0,
-    layer3: 0,
-    layer4: 0,
+    layer1: -650, 
+    layer2: -650, 
+    layer3: -650, 
+    layer4: -650,
   });
 
   const [isMoving, setIsMoving] = useState(false);
+  const [direction, setDirection] = useState<'left' | 'right'>('right'); // Default facing right
+  const [speedMultiplier, setSpeedMultiplier] = useState(1); // Speed control
+  
+  // Slideshow state
+  const [slideshowState, setSlideshowState] = useState<{
+    isOpen: boolean;
+    signpostId: number;
+    startSlide: number;
+    endSlide: number;
+  }>({
+    isOpen: false,
+    signpostId: 0,
+    startSlide: 1,
+    endSlide: 1,
+  });
+
+  // Persist current slide for each signpost
+  const [signpostSlideStates, setSignpostSlideStates] = useState<Record<number, number>>({});
+
+  // Use ref to track slideshow state for event handlers
+  const slideshowStateRef = useRef(slideshowState);
+  slideshowStateRef.current = slideshowState;
 
   const speeds = {
     layer1: 2,    // Slowest (background)
@@ -33,24 +57,26 @@ export default function Scene({ className = '' }: SceneProps) {
   const moveLeft = useCallback(() => {
     // Train moving left = landscape moves right
     setPositions(prev => ({
-      layer1: (prev.layer1 + speeds.layer1) % imageWidth,
-      layer2: (prev.layer2 + speeds.layer2) % imageWidth,
-      layer3: (prev.layer3 + speeds.layer3) % imageWidth,
-      layer4: (prev.layer4 + speeds.layer4) % imageWidth,
+      layer1: (prev.layer1 - speeds.layer1 * speedMultiplier) % imageWidth,
+      layer2: (prev.layer2 - speeds.layer2 * speedMultiplier) % imageWidth,
+      layer3: (prev.layer3 - speeds.layer3 * speedMultiplier) % imageWidth,
+      layer4: prev.layer4 - speeds.layer4 * speedMultiplier, // Remove modulo for continuous signpost progression
     }));
+    setDirection('left');
     setIsMoving(true);
-  }, []);
+  }, [speedMultiplier]);
 
   const moveRight = useCallback(() => {
     // Train moving right = landscape moves left
     setPositions(prev => ({
-      layer1: (prev.layer1 - speeds.layer1) % imageWidth,
-      layer2: (prev.layer2 - speeds.layer2) % imageWidth,
-      layer3: (prev.layer3 - speeds.layer3) % imageWidth,
-      layer4: (prev.layer4 - speeds.layer4) % imageWidth,
+      layer1: (prev.layer1 + speeds.layer1 * speedMultiplier) % imageWidth,
+      layer2: (prev.layer2 + speeds.layer2 * speedMultiplier) % imageWidth,
+      layer3: (prev.layer3 + speeds.layer3 * speedMultiplier) % imageWidth,
+      layer4: prev.layer4 + speeds.layer4 * speedMultiplier, // Remove modulo for continuous signpost progression
     }));
+    setDirection('right');
     setIsMoving(true);
-  }, []);
+  }, [speedMultiplier]);
 
   // Reset moving state after a short delay
   useEffect(() => {
@@ -65,6 +91,9 @@ export default function Scene({ className = '' }: SceneProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Don't handle scene navigation when slideshow is open
+      if (slideshowStateRef.current.isOpen) return;
+      
       switch (event.key.toLowerCase()) {
         case 'a':
         case 'arrowleft':
@@ -84,7 +113,34 @@ export default function Scene({ className = '' }: SceneProps) {
   }, [moveLeft, moveRight]);
 
   const handleSignpostClick = (id: number) => {
-    console.log(`Signpost ${id} clicked! Welcome to bulletin board ${id}!`);
+    const slideConfig = getSlideConfigForSignpost(id);
+    
+    if (slideConfig) {
+      setSlideshowState({
+        isOpen: true,
+        signpostId: id,
+        startSlide: slideConfig.startSlide,
+        endSlide: slideConfig.endSlide,
+      });
+    } else {
+      console.warn(`No slide configuration found for signpost ${id}`);
+    }
+  };
+
+  const closeSlideshowHandler = useCallback(() => {
+    setSlideshowState(prev => ({ ...prev, isOpen: false }));
+  }, []);
+
+  const handleSlideChange = useCallback((signpostId: number, currentSlide: number) => {
+    setSignpostSlideStates(prev => ({
+      ...prev,
+      [signpostId]: currentSlide
+    }));
+  }, []);
+
+  // Get the current slide for a signpost, defaulting to startSlide if not set
+  const getCurrentSlideForSignpost = (signpostId: number, startSlide: number) => {
+    return signpostSlideStates[signpostId] ?? startSlide;
   };
 
   return (
@@ -127,7 +183,7 @@ export default function Scene({ className = '' }: SceneProps) {
         />
       
       {/* Rails layer - moves with layer 4 */}
-      <div style={{ zIndex: 35 }}>
+      <div style={{ zIndex: 35, pointerEvents: 'none' }}>
         <Rails 
           position={positions.layer4} 
           className=""
@@ -135,7 +191,7 @@ export default function Scene({ className = '' }: SceneProps) {
       </div>
       
       {/* Train layer - centered, shows GIF when moving */}
-      <div style={{ zIndex: 37 }}>
+      <div style={{ zIndex: 37, pointerEvents: 'none' }}>
         <Train 
           isMoving={isMoving} 
           className=""
@@ -143,7 +199,7 @@ export default function Scene({ className = '' }: SceneProps) {
       </div>
       
       {/* Layer 3 - Foreground (fastest) */}
-      <div style={{ zIndex: 40 }}>
+      <div style={{ zIndex: 40, pointerEvents: 'none' }}>
         <LandscapeLayer 
           layerNum={3} 
           position={positions.layer3} 
@@ -151,6 +207,39 @@ export default function Scene({ className = '' }: SceneProps) {
         />
       </div>
       
+      {/* Speed Dial Overlay - Upper left corner */}
+      <div 
+        className="fixed top-4 left-4 z-50 bg-black bg-opacity-5 rounded-lg p-3"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <div className="text-white text-sm font-medium mb-2">Speed</div>
+        <div className="flex flex-row gap-2">
+          {[1, 2, 4, 8].map((speed) => (
+            <button
+              key={speed}
+              onClick={() => setSpeedMultiplier(speed)}
+              className={`px-3 py-1 text-sm rounded transition-colors ${
+                speedMultiplier === speed
+                  ? 'bg-blue-500 bg-opacity-70 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {speed}x
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Slideshow - Highest z-index to appear above everything */}
+      <Slideshow
+        isOpen={slideshowState.isOpen}
+        onClose={closeSlideshowHandler}
+        startSlide={slideshowState.startSlide}
+        endSlide={slideshowState.endSlide}
+        signpostId={slideshowState.signpostId}
+        currentSlide={getCurrentSlideForSignpost(slideshowState.signpostId, slideshowState.startSlide)}
+        onSlideChange={handleSlideChange}
+      />
       
       </div>
     </div>

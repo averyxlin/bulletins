@@ -8,13 +8,15 @@ interface SignpostProps {
   className?: string;
   position?: { x: string; y: string };
   signpostId?: number;
+  displayNumber?: number;
 }
 
 export default function Signpost({ 
   onClick, 
   className = '',
   position = { x: '20%', y: '60%' },
-  signpostId = 0
+  signpostId = 0,
+  displayNumber
 }: SignpostProps) {
   const signpostWidth = 240;
   const signpostHeight = 320;
@@ -32,6 +34,9 @@ export default function Signpost({
     const grassNumber = availableNumbers[signpostId % availableNumbers.length];
     return `/assets/grass/grassandflowers${grassNumber}.png`;
   }, [signpostId]);
+
+  // Use the passed displayNumber or calculate from signpostId as fallback
+  const finalDisplayNumber = displayNumber ?? (signpostId + 1);
 
   return (
     <div className={`absolute inset-0 overflow-hidden ${className}`}>
@@ -59,6 +64,33 @@ export default function Signpost({
           unoptimized
           sizes={`${signpostWidth}px`}
         />
+        
+        {/* White pixelated number in the 2nd, lower gray square */}
+        <div
+          className="absolute flex items-center justify-center"
+          style={{
+            left: '43.5%',
+            top: '42.75%', 
+            width: '5px',
+            height: '5px',
+            transform: 'translateX(-50%)',
+            zIndex: 10,
+          }}
+        >
+          <span
+            className="font-bold select-none"
+            style={{
+              fontSize: '18px',
+              fontFamily: 'var(--font-tiny5)',
+              color: '#FFFFFF',
+              imageRendering: 'pixelated',
+              textShadow: '1px 1px 0px #000000, -1px -1px 0px #000000, 1px -1px 0px #000000, -1px 1px 0px #000000',
+              lineHeight: '1',
+            }}
+          >
+            {finalDisplayNumber}
+          </span>
+        </div>
       </div>
       
       {/* Grass at the base of the signpost - positioned relative to the same parent */}
